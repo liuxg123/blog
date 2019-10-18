@@ -4,16 +4,16 @@
 
 # Site
 title: 书生的博客
-subtitle:
+subtitle: 
 description: 
 keywords:
-author: liuxg
+author: 粤ICP备18021594号 liuxg
 language: en
 timezone:
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
-url: http://yoursite.com
+url: http://liuxgs.com
 root: /
 permalink: :year/:month/:day/:title/
 permalink_defaults:
