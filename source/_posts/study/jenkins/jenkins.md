@@ -1,0 +1,37 @@
+---
+layout: jenkins
+title: Docker 部署 jenkins 容器如何调用宿主机 docker 命令
+date: 2019-10-18 17:27:04
+tags: study
+---
+
+标题情况：要部署jenkins做持续集成，在jenkins中要使用docker命令，而部署的jenkins本身就是docker容器，在运行的jenkins容器中没有安装docker，所以不能使用docker命令，两种解决方式：1.基于jenkins的官方镜像自己做一层封装，也就是在jenkins镜像中安装docker；2.通过docker挂载宿主机上的docker文件，使得在jenkins容器中可以调用宿主机环境的 docker 命令。
+本文章讲解的是第二种方式
+
+## 思路
+想让jenkins容器可以执行宿主机上的docker命令，需要给予jenkins用户sudo权限，然而官方的镜像jenkins默认是没有sudo用户权限的，所以需要在官方镜像的基础上新建了一个镜像，默认给jenkins用户sudo权限。
+
+## 具体操作
+编写dockerfile，使用dockerfile基于官方jenkins镜像构建目标镜像
+{% codeblock [title] [lang:language] [url] [link text] %}
+FROM jenkins:latest
+MAINTAINER liuxg <liuxg@gmail.com>
+USER root
+RUN apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*
+RUN echo "jenkins ALL=NOPASSWD: ALL" >> /etc/sudoers
+USER jenkins
+{% endcodeblock %}
+构建命令
+{% codeblock [title] [lang:language] [url] [link text] %}
+docker build -t jenkins .
+{% endcodeblock %}
+运行命令
+{% codeblock [title] [lang:language] [url] [link text] %}
+docker run -d	-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -p 8080:8080 jenkins
+{% endcodeblock %}
+注：-v参数是将宿主机上的文件或目录挂载到容器中对应的文件或目录
+/var/run/docker.sock 文件是docker守护程序监听的文件，监听docker客户端的请求，挂载到jenkins容器中，在jenkins容器中运行docker命令的时候就会调用宿主机的docker环境
+/usr/bin/docker 文件是docker命令文件，挂载到jenkins容器中，在jenkins容器中就可以运行docker命令了，从而宿主机获取请求，执行命令
+特别注意：这里的docker命令一定要使用sudo提升权限去执行
+
+
