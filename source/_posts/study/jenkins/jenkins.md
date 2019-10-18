@@ -13,7 +13,7 @@ tags: study
 
 ## 具体操作
 编写dockerfile，使用dockerfile基于官方jenkins镜像构建目标镜像
-{% codeblock [title] [lang:language] [url] [link text] %}
+{% codeblock %}
 FROM jenkins:latest
 MAINTAINER liuxg <liuxg@gmail.com>
 USER root
@@ -22,11 +22,11 @@ RUN echo "jenkins ALL=NOPASSWD: ALL" >> /etc/sudoers
 USER jenkins
 {% endcodeblock %}
 构建命令
-{% codeblock [title] [lang:language] [url] [link text] %}
+{% codeblock %}
 docker build -t jenkins .
 {% endcodeblock %}
 运行命令
-{% codeblock [title] [lang:language] [url] [link text] %}
+{% codeblock %}
 docker run -d	-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -p 8080:8080 jenkins
 {% endcodeblock %}
 注：-v参数是将宿主机上的文件或目录挂载到容器中对应的文件或目录

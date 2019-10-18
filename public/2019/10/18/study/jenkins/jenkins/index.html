@@ -15,7 +15,7 @@
 <meta property="og:site_name" content="书生的博客">
 <meta property="og:description" content="标题情况：要部署jenkins做持续集成，在jenkins中要使用docker命令，而部署的jenkins本身就是docker容器，在运行的jenkins容器中没有安装docker，所以不能使用docker命令，两种解决方式：1.基于jenkins的官方镜像自己做一层封装，也就是在jenkins镜像中安装docker；2.通过docker挂载宿主机上的docker文件，使得在jenkins容器中可">
 <meta property="og:locale" content="en">
-<meta property="og:updated_time" content="2019-10-18T11:57:33.836Z">
+<meta property="og:updated_time" content="2019-10-18T11:59:54.670Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Docker 部署 jenkins 容器如何调用宿主机 docker 命令">
 <meta name="twitter:description" content="标题情况：要部署jenkins做持续集成，在jenkins中要使用docker命令，而部署的jenkins本身就是docker容器，在运行的jenkins容器中没有安装docker，所以不能使用docker命令，两种解决方式：1.基于jenkins的官方镜像自己做一层封装，也就是在jenkins镜像中安装docker；2.通过docker挂载宿主机上的docker文件，使得在jenkins容器中可">
@@ -90,11 +90,11 @@
         <p>标题情况：要部署jenkins做持续集成，在jenkins中要使用docker命令，而部署的jenkins本身就是docker容器，在运行的jenkins容器中没有安装docker，所以不能使用docker命令，两种解决方式：1.基于jenkins的官方镜像自己做一层封装，也就是在jenkins镜像中安装docker；2.通过docker挂载宿主机上的docker文件，使得在jenkins容器中可以调用宿主机环境的 docker 命令。<br>本文章讲解的是第二种方式</p>
 <h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>想让jenkins容器可以执行宿主机上的docker命令，需要给予jenkins用户sudo权限，然而官方的镜像jenkins默认是没有sudo用户权限的，所以需要在官方镜像的基础上新建了一个镜像，默认给jenkins用户sudo权限。</p>
 <h2 id="具体操作"><a href="#具体操作" class="headerlink" title="具体操作"></a>具体操作</h2><p>编写dockerfile，使用dockerfile基于官方jenkins镜像构建目标镜像</p>
-<figure class="highlight plain"><figcaption><span>[title] [] [url] [link text]</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">FROM jenkins:latest</span><br><span class="line">MAINTAINER liuxg &lt;liuxg@gmail.com&gt;</span><br><span class="line">USER root</span><br><span class="line">RUN apt-get update &amp;&amp; apt-get install -y sudo &amp;&amp; rm -rf /var/lib/apt/lists/*</span><br><span class="line">RUN echo &quot;jenkins ALL=NOPASSWD: ALL&quot; &gt;&gt; /etc/sudoers</span><br><span class="line">USER jenkins</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">FROM jenkins:latest</span><br><span class="line">MAINTAINER liuxg &lt;liuxg@gmail.com&gt;</span><br><span class="line">USER root</span><br><span class="line">RUN apt-get update &amp;&amp; apt-get install -y sudo &amp;&amp; rm -rf /var/lib/apt/lists/*</span><br><span class="line">RUN echo &quot;jenkins ALL=NOPASSWD: ALL&quot; &gt;&gt; /etc/sudoers</span><br><span class="line">USER jenkins</span><br></pre></td></tr></table></figure>
 <p>构建命令</p>
-<figure class="highlight plain"><figcaption><span>[title] [] [url] [link text]</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t jenkins .</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t jenkins .</span><br></pre></td></tr></table></figure>
 <p>运行命令</p>
-<figure class="highlight plain"><figcaption><span>[title] [] [url] [link text]</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -d	-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -p 8080:8080 jenkins</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -d	-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -p 8080:8080 jenkins</span><br></pre></td></tr></table></figure>
 <p>注：-v参数是将宿主机上的文件或目录挂载到容器中对应的文件或目录<br>/var/run/docker.sock 文件是docker守护程序监听的文件，监听docker客户端的请求，挂载到jenkins容器中，在jenkins容器中运行docker命令的时候就会调用宿主机的docker环境<br>/usr/bin/docker 文件是docker命令文件，挂载到jenkins容器中，在jenkins容器中就可以运行docker命令了，从而宿主机获取请求，执行命令<br>特别注意：这里的docker命令一定要使用sudo提升权限去执行</p>
 
       
