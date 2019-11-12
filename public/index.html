@@ -76,7 +76,7 @@
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2019/11/12/vue/component/">vue-component</a>
+      <a class="article-title" href="/2019/11/12/vue/component/">Vue组件之间通信传参使用总结</a>
     </h1>
   
 
@@ -84,7 +84,16 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h2 id="Vue组件之间通信传参使用总结"><a href="#Vue组件之间通信传参使用总结" class="headerlink" title="Vue组件之间通信传参使用总结"></a>Vue组件之间通信传参使用总结</h2>
+        <h2 id="Vue组件之间通信传参使用总结"><a href="#Vue组件之间通信传参使用总结" class="headerlink" title="Vue组件之间通信传参使用总结"></a>Vue组件之间通信传参使用总结</h2><p>一.父组件向子组件传参</p>
+<p>1.父组件中引用子组件<br><code>&lt;componentName :paramName=&quot;paramLabel&quot; /&gt;</code><br>2.子组件中参数接收设置<br><code>props: [&#39;paramName&#39;]</code><br>3.子组件中参数使用<br><code>this.paramName</code></p>
+<p>在父组件中引入子组件，子组件进行页面渲染时，通过标签中参数将父组件中的参数传递给子组件进行渲染，<code>paramName</code>可以是数字、字符串、列表、对象等类型，子组件中通过<code>this.paramName</code>获取父组件传入的参数值</p>
+<p>二.子组件向父组件传参</p>
+<p>1.父组件中定义方法（带参）<br><code>method(val1,val2...) { this.val1 = val1;this.val2 = val2 }</code><br>2.父组件中子组件标签中定义方法<br><code>&lt;subComponent @methodName=&quot;method&quot; /&gt;</code><br>3.子组件中调用<code>$emit</code>方法<br><code>this.$emit(&#39;methodName&#39;, this.val1, this.val2, ...)</code></p>
+<p>子组件中使用<code>$emit</code>方法时，会调用到父组件中子组件标签中的与子组件中<code>@methodName</code>一致的方法，父组件中<code>@methodName</code>绑定了父组件中定义的方法<code>method</code>，所以会将子组件的参数传入父组件中的<code>method</code>方法中，<code>val1，val2</code>就可以接收子组件传入的参数</p>
+<p>三.子组件向兄弟组件传参</p>
+<p>1.父组件中定义方法（带参）<br><code>method(val1,val2...) { this.val1 = val1;this.val2 = val2 }</code><br>2.父组件中子组件标签中定义方法<br><code>&lt;subComponent @methodName=&quot;method&quot; /&gt;</code><br>3.父组件中兄弟组件标签中定义方法<br><code>&lt;brotherComponent :valName1=&quot;val1&quot; :valName2=&quot;val2&quot; ... /&gt;</code><br>4.兄弟组件中监听传入参数<br><code>watch: { val1(val) { this.value = val } }</code><br>5.子组件中调用<code>$emit</code>方法<br><code>this.$emit(&#39;methodName&#39;, this.val1, this.val2, ...)</code></p>
+<p>子组件中使用<code>$emit</code>方法时，会调用到父组件中子组件标签中的与子组件中<code>@methodName</code>一致的方法，父组件中<code>@methodName</code>绑定了父组件中定义的方法<code>method</code>，所以会将子组件的参数传入父组件中的<code>method</code>方法中，<code>val1，val2</code>就可以接收子组件传入的参数，使用<code>this.val1 = val1;this.val2 = val2</code>进行父组件参数赋值，如果值有变动，<code>brotherComponent</code>兄弟组件会重新渲染，这时可以根据传入的参数进行业务逻辑处理以及重新渲染兄弟组件页面</p>
+
       
     </div>
     <footer class="article-footer">
@@ -275,7 +284,7 @@
       <ul>
         
           <li>
-            <a href="/2019/11/12/vue/component/">vue-component</a>
+            <a href="/2019/11/12/vue/component/">Vue组件之间通信传参使用总结</a>
           </li>
         
           <li>
