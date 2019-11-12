@@ -4,8 +4,6 @@ menu:
   Archives: /archives
 rss: /atom.xml
 
-keywords: Vue,组件,传参,参数
-
 # Content
 excerpt_link: Read More
 fancybox: true
