@@ -6,7 +6,6 @@
 
   
   <title>书生的博客</title>
-  <meta name="baidu-site-verification" content="HhXmteZRDh" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta property="og:type" content="website">
 <meta property="og:title" content="书生的博客">
@@ -63,6 +62,57 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-study/mysql/duplicate" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/11/25/study/mysql/duplicate/" class="article-date">
+  <time datetime="2019-11-25T02:38:26.000Z" itemprop="datePublished">2019-11-25</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/11/25/study/mysql/duplicate/">mysql 学习总结</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>进行数据批量插入时，根据表中唯一性约束判断某些记录在数据表中已经存在时，这时继续进行insert操作则会报错，执行中断。<br>mysql提供了此种情况的解决办法，但是在使用中，需要注意一些细节，以下举例</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">INSERT INTO tableName VALUES(),(),...() ON DUPLICATE KEY UPDATE column1=VALUES(column1),...column(n)=VALUES(column(1))</span><br></pre></td></tr></table></figure>
+
+<p>具体需求：一张测试表test，字段status记录了该条记录的状态，字段last_status记录该条记录的上一次状态，当记录更新时，last_status更新为原记录的status字段值</p>
+<h2 id="1-新建测试表并初始化测试数据"><a href="#1-新建测试表并初始化测试数据" class="headerlink" title="1.新建测试表并初始化测试数据"></a>1.新建测试表并初始化测试数据</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">CREATE TABLE `test` (</span><br><span class="line">  `id` bigint(20) NOT NULL AUTO_INCREMENT,</span><br><span class="line">  `name` varchar(255) DEFAULT NULL,</span><br><span class="line">  `status` tinyint(1) DEFAULT NULL,</span><br><span class="line">  `last_status` tinyint(1) DEFAULT NULL,</span><br><span class="line">  `create_time` bigint(20) DEFAULT NULL,</span><br><span class="line">  `create_user` varchar(20) DEFAULT NULL,</span><br><span class="line">  `udpate_time` bigint(20) DEFAULT NULL,</span><br><span class="line">  `update_user` varchar(20) DEFAULT NULL,</span><br><span class="line">  PRIMARY KEY (`id`),</span><br><span class="line">  UNIQUE KEY `UNIQUE_name` (`name`) USING BTREE</span><br><span class="line">) ENGINE=InnoDB DEFAULT CHARSET=utf8;</span><br><span class="line">INSERT INTO test(`name`,`status`,`last_status`,`create_time`,`create_user`,`update_time`,`update_user`) VALUES (&quot;name1&quot;, 1, null, NOW(), &quot;admin&quot;, NOW(), &quot;admin&quot;)</span><br><span class="line">INSERT INTO test(`name`,`status`,`last_status`,`create_time`,`create_user`,`update_time`,`update_user`) VALUES (&quot;name2&quot;, 2, null, NOW(), &quot;admin&quot;, NOW(), &quot;admin&quot;)</span><br><span class="line">执行结果</span><br><span class="line">1	name1	1		20191125105413	admin	20191125105413	admin</span><br><span class="line">2	name2	2		20191125105423	admin	20191125105423	admin</span><br></pre></td></tr></table></figure>
+<h2 id="2-插入一条记录，如果唯一性约束字段匹配记录存在，则更新该记录"><a href="#2-插入一条记录，如果唯一性约束字段匹配记录存在，则更新该记录" class="headerlink" title="2.插入一条记录，如果唯一性约束字段匹配记录存在，则更新该记录"></a>2.插入一条记录，如果唯一性约束字段匹配记录存在，则更新该记录</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">INSERT INTO test(`name`,`status`,`last_status`,`create_time`,`create_user`,`update_time`,`update_user`) VALUES (&quot;name2&quot;, 5, null, NOW(), &quot;admin&quot;, NOW(), &quot;admin&quot;) ON DUPLICATE KEY UPDATE</span><br><span class="line">`name`=VALUES(name),last_status=VALUES(status),update_time=now(),update_user=&quot;test&quot;</span><br><span class="line">执行结果</span><br><span class="line">1	name1	1		20191125105413	admin	20191125105413	admin</span><br><span class="line">2	name2	2	5	20191125105423	admin	20191125111104	test</span><br></pre></td></tr></table></figure>
+<p>name字段为“name2”的记录已经存在，此时会执行update语句，由update_user字段可以看出</p>
+<h2 id="3-使用last-status字段记录修改前记录的状态，执行下列语句"><a href="#3-使用last-status字段记录修改前记录的状态，执行下列语句" class="headerlink" title="3.使用last_status字段记录修改前记录的状态，执行下列语句"></a>3.使用last_status字段记录修改前记录的状态，执行下列语句</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">INSERT INTO test(`name`,`status`,`last_status`,`create_time`,`create_user`,`update_time`,`update_user`) VALUES (&quot;name2&quot;, 6, null, NOW(), &quot;admin&quot;, NOW(), &quot;admin&quot;) ON DUPLICATE KEY UPDATE</span><br><span class="line">`name`=VALUES(name),status=6, last_status=VALUES(status),update_time=now(),update_user=&quot;test&quot;</span><br><span class="line">执行结果</span><br><span class="line">1	name1	1		20191125105413	admin	20191125105413	admin</span><br><span class="line">2	name2	6	6	20191125105423	admin	20191125111151	test</span><br></pre></td></tr></table></figure>
+<p>当原表中status字段值被引用时，如上述例子，结果不符合要求，因为执行update语句时status字段先被更新，然后status字段值被引用，所以得到上述结果</p>
+<h2 id="4-修改顺序，继续执行下列语句"><a href="#4-修改顺序，继续执行下列语句" class="headerlink" title="4.修改顺序，继续执行下列语句"></a>4.修改顺序，继续执行下列语句</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">INSERT INTO test(`name`,`status`,`last_status`,`create_time`,`create_user`,`update_time`,`update_user`) VALUES (&quot;name2&quot;, 8, null, NOW(), &quot;admin&quot;, NOW(), &quot;admin&quot;) ON DUPLICATE KEY UPDATE</span><br><span class="line">`name`=VALUES(name), last_status=VALUES(status), status=8, update_time=now(), update_user=&quot;test&quot;</span><br><span class="line">执行结果</span><br><span class="line">1	name1	1		20191125105413	admin	20191125105413	admin</span><br><span class="line">2	name2	8	8	20191125105423	admin	20191125112021	test</span><br></pre></td></tr></table></figure>
+<p>修改赋值顺序后还是不能获得想要的结果，原因是通过VALUES()取值取的是插入记录数据中的值，去除VALUES()包裹，直接通过数表字段名称取值即可</p>
+<h2 id="5-修改字段取值，继续执行下列语句"><a href="#5-修改字段取值，继续执行下列语句" class="headerlink" title="5.修改字段取值，继续执行下列语句"></a>5.修改字段取值，继续执行下列语句</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">INSERT INTO test(`name`,`status`,`last_status`,`create_time`,`create_user`,`update_time`,`update_user`) VALUES (&quot;name2&quot;, 10, null, NOW(), &quot;admin&quot;, NOW(), &quot;admin&quot;) ON DUPLICATE KEY UPDATE</span><br><span class="line">`name`=VALUES(name), last_status=status, status=10, update_time=now(), update_user=&quot;test&quot;</span><br><span class="line">执行结果</span><br><span class="line">1	name1	1		20191125105413	admin	20191125105413	admin</span><br><span class="line">2	name2	10	8	20191125105423	admin	20191125113348	test</span><br></pre></td></tr></table></figure>
+<p>ok，执行成功，符合需求，新的记录中last_status记录了上一条记录的数据状态</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://liuxgs.com/2019/11/25/study/mysql/duplicate/" data-id="ck3du247800007kvnxcba7eew" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/mysql/">mysql</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-vue/component" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2019/11/12/vue/component/" class="article-date">
@@ -117,60 +167,11 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://liuxgs.com/2019/11/12/vue/component/" data-id="ck2vj65820002hwtmmqtq5jsk" class="article-share-link">Share</a>
+      <a data-url="http://liuxgs.com/2019/11/12/vue/component/" data-id="ck3dtp2zb000260vnjtf0sxe5" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/study/">study</a></li></ul>
 
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-hello-world" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2019/11/12/hello-world/" class="article-date">
-  <time datetime="2019-11-12T06:56:58.005Z" itemprop="datePublished">2019-11-12</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/11/12/hello-world/">Hello World</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a></p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://liuxgs.com/2019/11/12/hello-world/" data-id="ck2vj65730000hwtmrfmpnp8x" class="article-share-link">Share</a>
-      
-      
     </footer>
   </div>
   
@@ -214,11 +215,60 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://liuxgs.com/2019/10/18/study/jenkins/jenkins/" data-id="ck2vj658c0003hwtm6tuw0hx1" class="article-share-link">Share</a>
+      <a data-url="http://liuxgs.com/2019/10/18/study/jenkins/jenkins/" data-id="ck3dtp2zq000660vns708o89r" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/study/">study</a></li></ul>
 
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-hello-world" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/10/16/hello-world/" class="article-date">
+  <time datetime="2019-10-16T02:16:49.762Z" itemprop="datePublished">2019-10-16</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/10/16/hello-world/">Hello World</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://liuxgs.com/2019/10/16/hello-world/" data-id="ck3dtp2xp000060vnfau8n7mn" class="article-share-link">Share</a>
+      
+      
     </footer>
   </div>
   
@@ -239,7 +289,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/study/">study</a></li></ul>
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/mysql/">mysql</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/study/">study</a></li></ul>
     </div>
   </div>
 
@@ -249,7 +299,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/study/" style="font-size: 10px;">study</a>
+      <a href="/tags/mysql/" style="font-size: 10px;">mysql</a> <a href="/tags/study/" style="font-size: 20px;">study</a>
     </div>
   </div>
 
@@ -271,15 +321,19 @@
       <ul>
         
           <li>
+            <a href="/2019/11/25/study/mysql/duplicate/">mysql 学习总结</a>
+          </li>
+        
+          <li>
             <a href="/2019/11/12/vue/component/">Vue组件之间通信传参使用总结</a>
           </li>
         
           <li>
-            <a href="/2019/11/12/hello-world/">Hello World</a>
+            <a href="/2019/10/18/study/jenkins/jenkins/">Docker 部署 jenkins 容器</a>
           </li>
         
           <li>
-            <a href="/2019/10/18/study/jenkins/jenkins/">Docker 部署 jenkins 容器</a>
+            <a href="/2019/10/16/hello-world/">Hello World</a>
           </li>
         
       </ul>
@@ -315,20 +369,7 @@
   <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
   <script src="/fancybox/jquery.fancybox.pack.js"></script>
 
-  <script>
-    (function(){
-        var bp = document.createElement('script');
-        var curProtocol = window.location.protocol.split(':')[0];
-        if (curProtocol === 'https') {
-            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
-        }
-        else {
-            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
-        }
-        var s = document.getElementsByTagName("script")[0];
-        s.parentNode.insertBefore(bp, s);
-    })();
-    </script>
+
 <script src="/js/script.js"></script>
 
 

@@ -61,7 +61,7 @@ index_generator:
 # Category & Tag
 default_category: uncategorized
 category_map:
-tag_map:
+tag_map: [study,jenkins,mysql]
 
 # Metadata elements
 ## https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta
