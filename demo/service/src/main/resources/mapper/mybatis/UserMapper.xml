@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.mybatis.service.mapper.mybatis.UserMapper">
+
+    <resultMap id="userResultMapper" type="com.mybatis.service.entity.User">
+        <id property="id" jdbcType="VARCHAR" column="id"></id>
+        <result property="name" jdbcType="VARCHAR" column="name"></result>
+        <result property="nickName" jdbcType="VARCHAR" column="nick_name"></result>
+        <result property="email" jdbcType="VARCHAR" column="email"></result>
+        <result property="age" jdbcType="INTEGER" column="age"></result>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, name, nick_name, email, age
+    </sql>
+
+    <select id="list" parameterType="com.mybatis.service.entity.User" resultMap="userResultMapper">
+        select *
+        from user
+        where 1=1
+        <if test="name != null">
+            and name like "%"#{name}"%"
+        </if>
+        <if test="email != null">
+            and email like "%"#{email}"%"
+            
+        </if>
+        <if test="nickName != null">
+            and nickName like "%"#{nickName}"%"
+        </if>
+        group by id
+    </select>
+
+    <insert id="save" parameterType="com.mybatis.service.entity.User">
+        insert into user (<include refid="Base_Column_List"></include>)
+        values (#{id}, #{name}, #{nickName}, #{email}, #{age})
+    </insert>
+
+    <update id="update" parameterType="com.mybatis.service.entity.User">
+        update user
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="nickName != null">nick_name = #{nickName},</if>
+            <if test="age != null ">age = #{age},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <delete id="delete" parameterType="java.lang.String">
+        delete from user where id = ${id}
+    </delete>
+
+    <delete id="deleteAll">
+        delete from user where 1=1
+    </delete>
+
+</mapper>
